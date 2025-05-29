@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Returns Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .result-container {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-container.positive {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .result-container.negative {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+        }
+
+        .result-container.neutral {
+            background: #f8f9fa;
+            color: #666;
+            border: 2px dashed #ddd;
+        }
+
+        .result-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .result-details {
+            font-size: 0.9rem;
+            margin-top: 8px;
+            opacity: 0.9;
+        }
+
+        .pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .currency-symbol {
+            color: #888;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <h1>📈 Returns Calculator</h1>
+        
+        <div class="input-group">
+            <label for="openingPrice">
+                Monthly Opening Price
+            </label>
+            <input 
+                type="number" 
+                id="openingPrice" 
+                placeholder="Enter opening price"
+                step="0.01"
+                min="0"
+            >
+        </div>
+
+        <div class="input-group">
+            <label for="currentPrice">
+                Current LTP (Last Traded Price)
+            </label>
+            <input 
+                type="number" 
+                id="currentPrice" 
+                placeholder="Enter current price"
+                step="0.01"
+                min="0"
+            >
+        </div>
+
+        <div class="result-container neutral" id="resultContainer">
+            <div>
+                <div class="result-text" id="resultText">
+                    Enter prices to calculate returns
+                </div>
+                <div class="result-details" id="resultDetails"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const openingPriceInput = document.getElementById('openingPrice');
+        const currentPriceInput = document.getElementById('currentPrice');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultText = document.getElementById('resultText');
+        const resultDetails = document.getElementById('resultDetails');
+
+        function calculateReturns() {
+            const openingPrice = parseFloat(openingPriceInput.value);
+            const currentPrice = parseFloat(currentPriceInput.value);
+
+            // Clear previous results if inputs are empty
+            if (!openingPrice || !currentPrice || openingPrice <= 0 || currentPrice <= 0) {
+                resultContainer.className = 'result-container neutral';
+                resultText.textContent = 'Enter prices to calculate returns';
+                resultDetails.textContent = '';
+                return;
+            }
+
+            // Calculate percentage return
+            const percentageReturn = ((currentPrice - openingPrice) / openingPrice) * 100;
+            const absoluteChange = currentPrice - openingPrice;
+
+            // Update result display
+            const isPositive = percentageReturn > 0;
+            const isNegative = percentageReturn < 0;
+            
+            // Set container class for styling
+            if (isPositive) {
+                resultContainer.className = 'result-container positive';
+            } else if (isNegative) {
+                resultContainer.className = 'result-container negative';
+            } else {
+                resultContainer.className = 'result-container neutral';
+            }
+
+            // Format the percentage
+            const sign = isPositive ? '+' : '';
+            const emoji = isPositive ? '📈' : isNegative ? '📉' : '➖';
+            
+            resultText.textContent = `${emoji} ${sign}${percentageReturn.toFixed(2)}%`;
+            
+            // Show additional details
+            const changeText = isPositive ? 'Gain' : isNegative ? 'Loss' : 'No Change';
+            resultDetails.textContent = `${changeText}: ₹${Math.abs(absoluteChange).toFixed(2)}`;
+
+            // Add pulse animation
+            resultContainer.classList.add('pulse');
+            setTimeout(() => {
+                resultContainer.classList.remove('pulse');
+            }, 500);
+        }
+
+        // Add event listeners for real-time calculation
+        openingPriceInput.addEventListener('input', calculateReturns);
+        currentPriceInput.addEventListener('input', calculateReturns);
+
+        // Also trigger on focus out to handle edge cases
+        openingPriceInput.addEventListener('blur', calculateReturns);
+        currentPriceInput.addEventListener('blur', calculateReturns);
+    </script>
+</body>
+</html>
