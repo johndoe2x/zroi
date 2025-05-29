@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Returns Calculator</title>
+    <title>ROI Chart</title>
     <style>
         * {
             margin: 0;
@@ -21,13 +21,13 @@
             padding: 20px;
         }
 
-        .calculator-container {
+        .roi-container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            max-width: 450px;
+            max-width: 500px;
             width: 100%;
             text-align: center;
         }
@@ -68,68 +68,156 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .result-container {
+        .chart-container {
             margin-top: 30px;
-            padding: 25px;
+            padding: 30px;
+            background: #fff;
             border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            transform: translateY(10px);
             transition: all 0.3s ease;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            max-height: 0;
+            overflow: hidden;
         }
 
-        .result-container.positive {
+        .chart-container.show {
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 500px;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+
+        .roi-display {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 2.5rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .roi-display.positive {
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
             color: white;
         }
 
-        .result-container.negative {
+        .roi-display.negative {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             color: white;
         }
 
-        .result-container.neutral {
+        .roi-display.neutral {
             background: #f8f9fa;
             color: #666;
             border: 2px dashed #ddd;
         }
 
-        .result-text {
-            font-size: 1.8rem;
-            font-weight: 700;
+        .chart-bars {
+            display: flex;
+            align-items: end;
+            justify-content: space-around;
+            height: 220px;
+            margin-bottom: 20px;
+            padding: 0 30px;
+            position: relative;
+        }
+
+        .chart-bars::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 30px;
+            right: 30px;
+            height: 1px;
+            background: #ddd;
+        }
+
+        .bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 140px;
+        }
+
+        .bar {
+            width: 60px;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.5s ease;
+            position: relative;
+            margin-bottom: 15px;
+            min-height: 30px;
+        }
+
+        .bar.opening {
+            background: linear-gradient(to top, #667eea, #764ba2);
+        }
+
+        .bar.current {
+            background: linear-gradient(to top, #4facfe, #00f2fe);
+        }
+
+        .bar.current.negative {
+            background: linear-gradient(to top, #ff6b6b, #ee5a6f);
+        }
+
+        .bar-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .bar-value {
+            font-size: 0.9rem;
+            color: #666;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .roi-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .detail-item {
             text-align: center;
         }
 
-        .result-details {
-            font-size: 0.9rem;
-            margin-top: 8px;
-            opacity: 0.9;
+        .detail-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
         }
 
-        .pulse {
-            animation: pulse 0.5s ease-in-out;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-
-        .currency-symbol {
-            color: #888;
-            margin-right: 5px;
+        .detail-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <div class="calculator-container">
-        <h1>📈 Returns Calculator</h1>
+    <div class="roi-container">
+        <h1>📊 ROI Chart</h1>
         
         <div class="input-group">
             <label for="openingPrice">
-                Monthly Opening Price
+                Opening Price
             </label>
             <input 
                 type="number" 
@@ -142,7 +230,7 @@
 
         <div class="input-group">
             <label for="currentPrice">
-                Current LTP (Last Traded Price)
+                Current Price
             </label>
             <input 
                 type="number" 
@@ -153,12 +241,39 @@
             >
         </div>
 
-        <div class="result-container neutral" id="resultContainer">
-            <div>
-                <div class="result-text" id="resultText">
-                    Enter prices to calculate returns
+        <div class="chart-container" id="chartContainer">
+            <div class="chart-title">Return on Investment</div>
+            
+            <div class="roi-display neutral" id="roiDisplay">
+                Enter prices to see ROI
+            </div>
+
+            <div class="chart-bars">
+                <div class="bar-group">
+                    <div class="bar opening" id="openingBar"></div>
+                    <div class="bar-label">Opening</div>
+                    <div class="bar-value" id="openingValue">₹0</div>
                 </div>
-                <div class="result-details" id="resultDetails"></div>
+                <div class="bar-group">
+                    <div class="bar current" id="currentBar"></div>
+                    <div class="bar-label">Current</div>
+                    <div class="bar-value" id="currentValue">₹0</div>
+                </div>
+            </div>
+
+            <div class="roi-details">
+                <div class="detail-item">
+                    <div class="detail-label">Investment</div>
+                    <div class="detail-value" id="investmentAmount">₹0</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Current Value</div>
+                    <div class="detail-value" id="currentAmount">₹0</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Gain/Loss</div>
+                    <div class="detail-value" id="gainLoss">₹0</div>
+                </div>
             </div>
         </div>
     </div>
@@ -166,63 +281,86 @@
     <script>
         const openingPriceInput = document.getElementById('openingPrice');
         const currentPriceInput = document.getElementById('currentPrice');
-        const resultContainer = document.getElementById('resultContainer');
-        const resultText = document.getElementById('resultText');
-        const resultDetails = document.getElementById('resultDetails');
+        const chartContainer = document.getElementById('chartContainer');
+        const roiDisplay = document.getElementById('roiDisplay');
+        const openingBar = document.getElementById('openingBar');
+        const currentBar = document.getElementById('currentBar');
+        const openingValue = document.getElementById('openingValue');
+        const currentValue = document.getElementById('currentValue');
+        const investmentAmount = document.getElementById('investmentAmount');
+        const currentAmount = document.getElementById('currentAmount');
+        const gainLoss = document.getElementById('gainLoss');
 
-        function calculateReturns() {
+        function calculateROI() {
             const openingPrice = parseFloat(openingPriceInput.value);
             const currentPrice = parseFloat(currentPriceInput.value);
 
-            // Clear previous results if inputs are empty
+            // Hide chart if no valid data
             if (!openingPrice || !currentPrice || openingPrice <= 0 || currentPrice <= 0) {
-                resultContainer.className = 'result-container neutral';
-                resultText.textContent = 'Enter prices to calculate returns';
-                resultDetails.textContent = '';
+                chartContainer.classList.remove('show');
                 return;
             }
 
-            // Calculate percentage return
-            const percentageReturn = ((currentPrice - openingPrice) / openingPrice) * 100;
-            const absoluteChange = currentPrice - openingPrice;
+            // Show chart with animation
+            setTimeout(() => {
+                chartContainer.classList.add('show');
+            }, 100);
 
-            // Update result display
-            const isPositive = percentageReturn > 0;
-            const isNegative = percentageReturn < 0;
+            // Calculate ROI percentage
+            const roiPercentage = ((currentPrice - openingPrice) / openingPrice) * 100;
+            const absoluteChange = currentPrice - openingPrice;
             
-            // Set container class for styling
+            // Update ROI display
+            const isPositive = roiPercentage > 0;
+            const isNegative = roiPercentage < 0;
+            
             if (isPositive) {
-                resultContainer.className = 'result-container positive';
+                roiDisplay.className = 'roi-display positive';
+                roiDisplay.textContent = `📈 +${roiPercentage.toFixed(2)}%`;
             } else if (isNegative) {
-                resultContainer.className = 'result-container negative';
+                roiDisplay.className = 'roi-display negative';
+                roiDisplay.textContent = `📉 ${roiPercentage.toFixed(2)}%`;
             } else {
-                resultContainer.className = 'result-container neutral';
+                roiDisplay.className = 'roi-display neutral';
+                roiDisplay.textContent = `➖ 0.00%`;
             }
 
-            // Format the percentage
-            const sign = isPositive ? '+' : '';
-            const emoji = isPositive ? '📈' : isNegative ? '📉' : '➖';
-            
-            resultText.textContent = `${emoji} ${sign}${percentageReturn.toFixed(2)}%`;
-            
-            // Show additional details
-            const changeText = isPositive ? 'Gain' : isNegative ? 'Loss' : 'No Change';
-            resultDetails.textContent = `${changeText}: ₹${Math.abs(absoluteChange).toFixed(2)}`;
+            // Calculate bar heights
+            const maxPrice = Math.max(openingPrice, currentPrice);
+            const minHeight = 30;
+            const maxHeight = 180;
 
-            // Add pulse animation
-            resultContainer.classList.add('pulse');
+            const openingHeight = Math.max(minHeight, (openingPrice / maxPrice) * maxHeight);
+            const currentHeight = Math.max(minHeight, (currentPrice / maxPrice) * maxHeight);
+
+            // Update bars with animation
             setTimeout(() => {
-                resultContainer.classList.remove('pulse');
-            }, 500);
+                openingBar.style.height = `${openingHeight}px`;
+                currentBar.style.height = `${currentHeight}px`;
+            }, 200);
+
+            // Update current bar color
+            if (isPositive) {
+                currentBar.classList.remove('negative');
+            } else if (isNegative) {
+                currentBar.classList.add('negative');
+            }
+
+            // Update all values
+            openingValue.textContent = `₹${openingPrice.toFixed(2)}`;
+            currentValue.textContent = `₹${currentPrice.toFixed(2)}`;
+            investmentAmount.textContent = `₹${openingPrice.toFixed(2)}`;
+            currentAmount.textContent = `₹${currentPrice.toFixed(2)}`;
+            
+            // Format gain/loss with color
+            const sign = isPositive ? '+' : '';
+            gainLoss.textContent = `${sign}₹${absoluteChange.toFixed(2)}`;
+            gainLoss.style.color = isPositive ? '#4facfe' : isNegative ? '#ff6b6b' : '#666';
         }
 
-        // Add event listeners for real-time calculation
-        openingPriceInput.addEventListener('input', calculateReturns);
-        currentPriceInput.addEventListener('input', calculateReturns);
-
-        // Also trigger on focus out to handle edge cases
-        openingPriceInput.addEventListener('blur', calculateReturns);
-        currentPriceInput.addEventListener('blur', calculateReturns);
+        // Real-time calculation
+        openingPriceInput.addEventListener('input', calculateROI);
+        currentPriceInput.addEventListener('input', calculateROI);
     </script>
 </body>
 </html>
